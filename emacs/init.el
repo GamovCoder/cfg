@@ -1,26 +1,123 @@
-; Customization.
+; Use packages
 (require 'package)
-(add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
+
+(add-to-list 'package-archives
+	     '("melpa" . "http://melpa.org/packages/"))
 (add-to-list 'package-archives
              '("marmalade" . "http://marmalade-repo.org/packages/") t)
 (add-to-list 'package-archives
              '("org" . "http://orgmode.org/elpa/") t)
-
 (package-initialize)
 
+; Auto-install of use-package
 (when (not (package-installed-p 'use-package))
   (package-refresh-contents)
   (package-install 'use-package))
 
+(require 'use-package)
 
+; Use add necessaary PATHs for OS X
 (when (memq window-system '(mac ns))
-  (exec-path-from-shell-initialize))
+  (use-package exec-path-from-shell
+    :ensure t
+    :config
+    (exec-path-from-shell-initialize)
+  ))
 
-(require 'evil)
-(evil-mode 1)
+(use-package evil
+  :ensure t
+  :config
+  (evil-mode t)
+)
 
-(set-frame-font "Terminus (TTF) Medium 16" nil t)
+; Autocomplete
+(use-package company
+  :ensure t
+  :config
+  (setq company-idle-delay 0)
+  (setq company-minimum-prefix-length 3)
+  (define-key company-active-map (kbd "M-n") nil)
+  (define-key company-active-map (kbd "M-p") nil)
+  (define-key company-active-map (kbd "C-n") #'company-select-next)
+  (define-key company-active-map (kbd "C-p") #'company-select-previous)
 
+  (use-package company-irony
+    :ensure t
+    :config
+    (add-to-list 'company-backends 'company-irony))
+
+  (add-hook 'c-mode-hook 'company-mode)
+  (add-hook 'c++-mode-hook 'company-mode)
+)
+
+ (use-package irony
+  :ensure t
+  :init
+  (unless (irony--find-server-executable)
+  (irony-install-server "bash -c \"cd ~/.emacs.d/elpa/irony-*/server && mkdir -p build && cd build && cmake -DCMAKE_INSTALL_PREFIX=~/.emacs.d/irony -DCMAKE_BUILD_TYPE=Release .. && make -j2 && make install\""))
+  :config
+  (add-hook 'c-mode-hook 'irony-mode)
+  (add-hook 'c++-mode-hook 'irony-mode)
+  (add-hook 'irony-mode-hook 'irony-cdb-autosetup-compile-options))
+
+(use-package irony-eldoc
+  :ensure t
+  :config
+  (add-hook 'irony-mode-hook 'irony-eldoc))
+
+ (use-package flycheck
+  :ensure t
+  :config
+  (add-hook 'c-mode-hook 'flycheck-mode)
+  (add-hook 'c++-mode-hook 'flycheck-mode))
+
+(use-package flycheck-irony
+  :ensure t
+  :config
+  (add-hook 'flycheck-mode-hook 'flycheck-irony-setup)
+  (add-hook 'flyckeck-mode-hook 'flycheck-irony-setup))
+
+(use-package flycheck-pos-tip
+  :ensure t
+  :config
+  (flycheck-pos-tip-mode))
+
+; Project navigation
+(use-package helm
+  :ensure t
+  :config
+  (global-set-key (kbd "M-x") #'helm-M-x)
+  (global-set-key (kbd "C-x C-f") #'helm-find-files)
+  (helm-mode))
+
+(use-package projectile
+  :ensure t
+  :config
+  (projectile-mode))
+
+(use-package helm-projectile
+  :ensure t
+  :config
+  (helm-projectile-on))
+
+(use-package dracula-theme
+  :ensure t
+  :config
+  (add-to-list 'custom-theme-load-path "~/.emacs.d/themes")
+  (load-theme 'dracula t))
+
+(use-package key-chord
+  :ensure t
+  :after evil
+  :init
+  (setq key-chord-two-keys-delay 0.2)
+  :config
+  (key-chord-mode t)
+  (key-chord-define evil-insert-state-map "jk" 'evil-normal-state)
+  (key-chord-define evil-visual-state-map "jk" 'evil-normal-state)
+  (key-chord-define evil-replace-state-map "jk" 'evil-normal-state))
+
+; General settings
 (tool-bar-mode 0)
 (menu-bar-mode 0)
 (scroll-bar-mode 0)
@@ -28,168 +125,43 @@
 (show-paren-mode 1)
 (global-hl-line-mode)
 
-(fset 'yes-or-no-p 'y-or-n-p)
+; Stolen from rasendubi
+(c-add-style "rasen"
+             '("k&r"
+	       (indent-tabs-mode . nil)
+               (c-basic-offset . 4)
+               (fill-column . 70)
+               (whitespace-line-column . 100)
+               (c-block-comment-prefix . "* ")
+               (c-label-minimum-indentation . 0)
+               (c-offsets-alist . ((case-label . +)
+                                   (arglist-intro . ++)
+                                   (arglist-cont-nonempty . ++)
+                                   (innamespace . 0)
+                                   (inline-open . 0)
+                                   (inextern-lang . 0)))))
 
-(setq evil-magit-state 'motion)
-(require 'evil-magit)
+(setq c-default-style '((java-mode . "java")
+                        (awk-mode . "awk")
+                        (other . "rasen")))
+(setq superword-mode t)
+(add-hook 'prog-mode-hook
+          (lambda () (modify-syntax-entry ?_ "w")))
 
-(global-set-key (kbd "C-x g") 'magit-status)
-
-; CMake Mode
-(use-package cmake-mode
-  :mode ("^CMakeLists\\.txt$" . cmake-mode)
-  :config
-  (setq cmake-tab-width 4)
-  (use-package cmake-font-lock)
-  (use-package company-cmake))
-
-(require 'powerline)
-(powerline-evil-center-color-theme)
-
-(use-package key-chord
-  :after evil
-  :config
-  (key-chord-mode 1)
-  (key-chord-define-global "jk" 'evil-force-normal-state)
-  (key-chord-define-global "[]" 'whitespace-cleanup))
-
-(use-package helm-projectile
-  :commands (helm-projectile-switch-to-buffer
-             helm-projectile-find-dir
-             helm-projectile-dired-find-dir
-             helm-projectile-recentf
-             helm-projectile-find-file
-             helm-projectile-grep
-             helm-projectile
-             helm-projectile-switch-project)
-  :init
-  (helm-projectile-on)
-  (global-set-key (kbd "C-c p p")
-                  'helm-projectile)
-  :config
-  (helm-projectile-on))
-
-(use-package helm
-  :init
-  (global-set-key (kbd "C-x C-b") 'helm-mini)
-  (global-set-key (kbd "C-x C-f") 'helm-find-files)
-  (global-set-key (kbd "C-h") 'helm-command-prefix)
-  :config
-  (require 'helm-config)
-  (define-key helm-map (kbd "<tab>") 'helm-execute-persistent-action)
-  (helm-mode 1)
+; Set font if available.
+(when (member "Terminus (TTF)" (font-family-list))
+  (set-frame-font "Terminus (TTF) Medium 16" nil)
 )
 
-(use-package projectile
-  :commands (projectile-ack
-             projectile-ag
-             projectile-compile-project
-             projectile-run-project
-             projectile-dired
-             projectile-grep
-             projectile-find-dir
-             projectile-find-file
-             projectile-find-tag
-             projectile-find-test-file
-             projectile-invalidate-cache
-             projectile-kill-buffers
-             projectile-multi-occur
-             projectile-project-root
-             projectile-recentf
-             projectile-regenerate-tags
-             projectile-register-project-type
-             projectile-replace
-             projectile-run-async-shell-command-in-root
-             projectile-run-shell-command-in-root
-             projectile-switch-project
-             projectile-switch-to-buffer
-             projectile-vc)
-  :diminish projectile-mode
-  :config
-  ;; Use prefix arg, is you want to change compilation command
-  ;;(setq compilation-read-command nil)
 
-  (projectile-global-mode)
-  (setq projectile-completion-system 'helm))
-
-(global-set-key (kbd "<f9>") 'projectile-compile-project)
-(global-set-key (kbd "<f8>") 'projectile-test-project)
-(global-set-key (kbd "<f7>") 'projectile-run-project)
-
-(setq compilation-read-command nil)
-(setq projectile-project-compilation-cmd  "mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug .. && make")
-
-(require 'yasnippet)
-(yas-global-mode 1)
-
-(require 'auto-complete)
-(require 'auto-complete-config)
-
-
-(add-to-list 'custom-theme-load-path "~/.emacs.d/themes")
-(load-theme 'architect t)
-
-
-(setq-default indent-tabs-mode nil)
-(add-to-list 'projectile-globally-ignored-directories "build")
-(add-to-list 'projectile-globally-ignored-directories "target")
-
-;; Tramp mode
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(enable-remote-dir-locals t nil (tramp) "Enable remote dir locals files")
  '(package-selected-packages
    (quote
-    (edit-server exec-path-from-shell rust-mode key-chord evil-magit magit ac-ispell helm-ispell ycmd evil use-package powerline-evil php-mode markdown-mode helm-projectile flycheck-ycmd company-ycmd company-ycm cmake-mode auto-complete-clang-async auto-complete-clang ac-clang)))
- '(password-cache t nil (tramp) "Cache Passwords")
- '(password-cache-expiry nil nil (tramp) "Password expiration is off")
- '(safe-local-variable-values
-   (quote
-    ((projectile-project-run-cmd . "rm -rf build && rm main*")
-     (projectile-project-run-cmd . "rm -rf build && rm report*")
-     (projectile-project-test-cmd . "open main.pdf")
-     (projectile-project-compilation-cmd . "mkdir -p build && cd build && cmake -Dwithout_report=ON -DCMAKE_BUILD_TYPE=Debug .. && make")
-     (projectile-project-compilation-cmd . "mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug -Dwithout_report=ON .. && make")
-     (projectile-project-test-cmd . "open report.pdf")
-     (projectile-project-run-cmd . "rm -rf build report.pdf report.aux report.log")
-     (projectile-project-test-cmd . "ls")
-     (projectile-project-test-cmd . "mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DWITH_TESTS=ON .. && make && make test")
-     (projectile-project-test-cmd . "mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DWITH_TESTS=ON .. && make -j2 && make test")
-     (projectile-project-run-cmd . "rm -rf build")
-     (projectile-project-test-cmd . "mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DWITH_TESTS=ON .. && make test")
-     (projectile-project-compilation-cmd . "mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug .. && make")
-     (projectile-project-compilation-cmd . "mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DWITH_TESTS=ON .. && make")
-     (projectile-project-compilation-cmd . "mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DWITH_TEST=ON .. && make")
-     (compilation-read-command)
-     (projectile-project-run-cmd . "cargo run")
-     (projectile-project-compilation-cmd . "cargo build")
-     (projectile-project-run-cmd . "cd build && make test")
-     (projectile-project-compilation-cmd . "mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug -DWITH_TESTS=ON .. && make -j4"))))
- '(tramp-default-method "ssh" nil (tramp) "Default connection mode now is ssh"))
-
-(add-to-list 'tramp-default-user-alist
-             '("ssh" "10.2.15.157" "architec"))
-
-
-(require 'edit-server)
-(edit-server-start)
-
-(setq superword-mode t)
-(add-hook 'prog-mode-hook
-          (lambda () (modify-syntax-entry ?_ "w"))) ;;underscore as a part of the word
-(add-hook 'prog-mode-hook (lambda() (setq electric-indent-mode t)))
-
-(add-hook 'prog-mode-hook (lambda() (setq c-basic-offset 4)))
-
-(setenv "PATH" (concat (getenv "PATH") ":/usr/local/bin"))
-(setq exec-path (append exec-path '("/usr/local/bin")))
-
-(global-set-key (kbd "M-+") 'other-window)
-(setq-default ispell-program-name "/usr/local/bin/ispell")
-
+    (key-chord dracula-theme helm flycheck-pos-tip flycheck-pos-tip-mode flycheck-irony flycheck flyckeck-irony irony evil use-package))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
