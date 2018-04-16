@@ -175,8 +175,6 @@
 (column-number-mode 1)
 (show-paren-mode 1)
 (global-hl-line-mode)
-(custom-set-variables '(initial-frame-alist
-    '((fullscreen . maximized))))
 
 ; Stolen from rasendubi
 (c-add-style "rasen"
@@ -197,24 +195,15 @@
 (setq c-default-style '((java-mode . "java")
                         (awk-mode . "awk")
                         (other . "rasen")))
+
+; Set font if available.
+(when (member "Terminus (TTF)" (font-family-list))
+  (set-face-attribute 'default nil :font "Terminus (TTF) Medium 16")
+)
+
 (setq superword-mode t)
 (add-hook 'prog-mode-hook
           (lambda () (modify-syntax-entry ?_ "w")))
 
-; Set font if available.
-(when (member "Terminus (TTF)" (font-family-list))
-  (set-frame-font "Terminus (TTF) Medium 16" nil t)
-)
-
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(package-selected-packages
-   (quote
-    (cmake-mode key-chord dracula-theme helm flycheck-pos-tip flycheck-pos-tip-mode flycheck-irony flycheck flyckeck-irony irony evil use-package)))
- '(safe-local-variable-values
-   (quote
-    ((compilation-read-command . t)
-     (compilation-read-command)))))
+(put 'compilation-read-command 'safe-local-variable-values t)
+(put 'compilation-read-command 'safe-local-variable-values nil)
