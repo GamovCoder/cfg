@@ -2,7 +2,7 @@
 (require 'package)
 
 (add-to-list 'package-archives
-	     '("melpa" . "http://melpa.org/packages/"))
+             '("melpa" . "http://melpa.org/packages/"))
 (add-to-list 'package-archives
              '("marmalade" . "http://marmalade-repo.org/packages/") t)
 (add-to-list 'package-archives
@@ -53,7 +53,12 @@
  (use-package irony
   :ensure t
   :init
-  (unless (irony--find-server-executable)
+  (defun irony-find-server-executable()
+    (let ((exec-path (cons (expand-file-name "bin" irony-server-install-prefix)
+			   exec-path)))
+      (executable-find "irony-server")))
+
+  (unless (irony-find-server-executable)
   (irony-install-server "bash -c \"cd ~/.emacs.d/elpa/irony-*/server && mkdir -p build && cd build && cmake -DCMAKE_INSTALL_PREFIX=~/.emacs.d/irony -DCMAKE_BUILD_TYPE=Release .. && make -j2 && make install\""))
   :config
   (add-hook 'c-mode-hook 'irony-mode)
@@ -74,8 +79,7 @@
 (use-package flycheck-irony
   :ensure t
   :config
-  (add-hook 'flycheck-mode-hook 'flycheck-irony-setup)
-  (add-hook 'flyckeck-mode-hook 'flycheck-irony-setup))
+  (add-hook 'flycheck-mode-hook 'flycheck-irony-setup))
 
 (use-package flycheck-pos-tip
   :ensure t
@@ -93,6 +97,35 @@
 (use-package projectile
   :ensure t
   :config
+  (add-to-list 'projectile-globally-ignored-directories "BUILD")
+  (add-to-list 'projectile-globally-ignored-directories "build")
+  (add-to-list 'projectile-globally-ignored-directories "artifacts")
+
+  ; Used by projectile-grep
+  (add-to-list 'projectile-globally-ignored-files "*.bin")
+  (add-to-list 'projectile-globally-ignored-files "*.sign")
+  (add-to-list 'projectile-globally-ignored-files "*.map")
+  (add-to-list 'projectile-globally-ignored-files "*.i")
+  (add-to-list 'projectile-globally-ignored-files "*.out")
+  (add-to-list 'projectile-globally-ignored-files "*.*#")
+  (add-to-list 'projectile-globally-ignored-files "*.exe")
+  (add-to-list 'projectile-globally-ignored-files "*.zip")
+  (add-to-list 'projectile-globally-ignored-files "*.log")
+
+  ; Seems like projectile-find-file uses this suffixes rather than ignored files
+  (add-to-list 'projectile-globally-ignored-file-suffixes ".bin")
+  (add-to-list 'projectile-globally-ignored-file-suffixes ".sign")
+  (add-to-list 'projectile-globally-ignored-file-suffixes ".map")
+  (add-to-list 'projectile-globally-ignored-file-suffixes ".i")
+  (add-to-list 'projectile-globally-ignored-file-suffixes ".out")
+  (add-to-list 'projectile-globally-ignored-file-suffixes ".*#")
+  (add-to-list 'projectile-globally-ignored-file-suffixes ".exe")
+  (add-to-list 'projectile-globally-ignored-file-suffixes ".zip")
+  (add-to-list 'projectile-globally-ignored-file-suffixes ".log")
+
+  (define-key projectile-mode-map (kbd "<f9>") #'projectile-compile-project)
+  (define-key projectile-mode-map (kbd "<f10>") #'projectile-test-project)
+  (define-key projectile-mode-map (kbd "<f11>") #'projectile-run-project)
   (projectile-mode))
 
 (use-package helm-projectile
@@ -113,9 +146,27 @@
   (setq key-chord-two-keys-delay 0.2)
   :config
   (key-chord-mode t)
+  (key-chord-define evil-insert-state-map "[]" 'whitespace-cleanup)
   (key-chord-define evil-insert-state-map "jk" 'evil-normal-state)
   (key-chord-define evil-visual-state-map "jk" 'evil-normal-state)
   (key-chord-define evil-replace-state-map "jk" 'evil-normal-state))
+
+(use-package magit
+  :ensure t
+  :config
+  (global-set-key (kbd "C-x g") 'magit-status))
+
+(use-package evil-magit
+  :ensure t
+  :after magit
+  :config
+  (setq evil-magit-state 'motion))
+
+(use-package cmake-mode
+  :ensure t
+  :mode ("^CMakeLists.txt$")
+  :config
+  (cmake-mode))
 
 ; General settings
 (tool-bar-mode 0)
@@ -128,7 +179,7 @@
 ; Stolen from rasendubi
 (c-add-style "rasen"
              '("k&r"
-	       (indent-tabs-mode . nil)
+               (indent-tabs-mode . nil)
                (c-basic-offset . 4)
                (fill-column . 70)
                (whitespace-line-column . 100)
@@ -150,9 +201,8 @@
 
 ; Set font if available.
 (when (member "Terminus (TTF)" (font-family-list))
-  (set-frame-font "Terminus (TTF) Medium 16" nil)
+  (set-frame-font "Terminus (TTF) Medium 16" nil t)
 )
-
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
@@ -161,10 +211,8 @@
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (key-chord dracula-theme helm flycheck-pos-tip flycheck-pos-tip-mode flycheck-irony flycheck flyckeck-irony irony evil use-package))))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
+    (cmake-mode key-chord dracula-theme helm flycheck-pos-tip flycheck-pos-tip-mode flycheck-irony flycheck flyckeck-irony irony evil use-package)))
+ '(safe-local-variable-values
+   (quote
+    ((compilation-read-command . t)
+     (compilation-read-command)))))
