@@ -175,6 +175,8 @@
 (column-number-mode 1)
 (show-paren-mode 1)
 (global-hl-line-mode)
+(custom-set-variables '(initial-frame-alist
+    '((fullscreen . maximized))))
 
 ; Stolen from rasendubi
 (c-add-style "rasen"
