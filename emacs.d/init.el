@@ -129,6 +129,7 @@
 (use-package helm-projectile
   :ensure t
   :config
+  (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
   (helm-projectile-on))
 
 (use-package dracula-theme
@@ -166,6 +167,24 @@
   :config
   (cmake-mode))
 
+(use-package nix-mode
+  :ensure t
+  :mode (".*\.nix")
+  :config
+  (nix-mode))
+
+(use-package rtags
+  :ensure t
+  :config
+  (add-hook 'c-mode-hook 'rtags-start-process-unless-running)
+  (define-key evil-normal-state-map "gd" 'rtags-find-symbol-at-point)
+  (define-key evil-normal-state-map "gb" 'rtags-location-stack-back)
+  )
+
+(use-package helm-rtags
+  :ensure t
+  :after rtags)
+
 ; General settings
 (tool-bar-mode 0)
 (menu-bar-mode 0)
@@ -196,7 +215,7 @@
 
 ; Set font if available.
 (when (member "Terminus (TTF)" (font-family-list))
-  (set-face-attribute 'default nil :font "Terminus (TTF) Medium 16")
+  (set-face-attribute 'default nil :font "Terminus (TTF) Medium 18")
 )
 
 (setq superword-mode t)
