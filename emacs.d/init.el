@@ -176,14 +176,17 @@
 (use-package rtags
   :ensure t
   :config
-  (add-hook 'c-mode-hook 'rtags-start-process-unless-running)
   (define-key evil-normal-state-map "gd" 'rtags-find-symbol-at-point)
   (define-key evil-normal-state-map "gb" 'rtags-location-stack-back)
+  (setq rtags-rdm-process-use-pipe t)
+  (add-hook 'c-mode-hook 'rtags-start-process-unless-running)
   )
 
 (use-package helm-rtags
   :ensure t
-  :after rtags)
+  :after rtags
+  :config
+  (setq rtags-display-result-backend 'helm))
 
 ; General settings
 (tool-bar-mode 0)
