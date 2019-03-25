@@ -1,0 +1,3 @@
+[submodule "volume-control"]
+	path = volume-control
+	url = https://github.com/deficient/volume-control.git
